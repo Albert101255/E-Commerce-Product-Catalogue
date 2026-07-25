@@ -73,10 +73,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ### 3. Open in Browser
-* **Storefront Home:** [http://localhost:8000/](http://localhost:8000/)
-* **Products Catalog:** [http://localhost:8000/products](http://localhost:8000/products)
-* **My Orders:** [http://localhost:8000/orders](http://localhost:8000/orders)
-* **Order Tracking:** [http://localhost:8000/tracking](http://localhost:8000/tracking)
+Once the server is running locally, access the web application routes:
+
+| Route Name | Target URL | Description |
+| :--- | :--- | :--- |
+| **Storefront Home** | [`http://localhost:8000/`](http://localhost:8000/) | Main landing page & featured catalog |
+| **Products Catalog** | [`http://localhost:8000/products`](http://localhost:8000/products) | Dedicated product list with filters & variants |
+| **My Orders** | [`http://localhost:8000/orders`](http://localhost:8000/orders) | User purchase history & order details |
+| **Order Tracking** | [`http://localhost:8000/tracking`](http://localhost:8000/tracking) | Real-time package tracking telemetry |
 
 ---
 
