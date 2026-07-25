@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products — Apex Commerce</title>
+  <meta name="description" content="Browse our full product catalog.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="/static/pages.css">
+</head>
+<body>
+
+<header class="navbar" id="navbar">
+  <div id="shared-nav"></div>
+</header>
+
+<!-- ═══ CART DRAWER ═══ -->
+<div id="_cart-overlay" class="overlay" onclick="toggleCart()"></div>
+<aside id="_cart-drawer" class="drawer">
+  <div class="drawer-top">
+    <h3>Shopping Cart</h3>
+    <button class="drawer-close" onclick="toggleCart()">×</button>
+  </div>
+  <div id="_cart-items" class="drawer-body">
+    <div class="empty-bag"><div class="empty-icon">🛍️</div><p>Your cart is empty</p></div>
+  </div>
+  <div id="_cart-foot" class="drawer-footer hidden">
+    <div class="total-row">
+      <span>Subtotal</span>
+      <span id="_cart-total" class="total-val">$0.00</span>
+    </div>
+    <!-- CHECKOUT FORM — all fields required -->
+    <div class="checkout-section">
+      <h4 class="section-label">📦 Shipping Details</h4>
+      <div class="checkout-grid">
+        <div class="field full">
+          <label>Street Address <span class="req">*</span></label>
+          <input id="co-street" type="text" placeholder="123 Main Street" oninput="validateCheckout()">
+          <span class="field-err" id="err-street">Required</span>
+        </div>
+        <div class="field">
+          <label>City <span class="req">*</span></label>
+          <input id="co-city" type="text" placeholder="New York" oninput="validateCheckout()">
+          <span class="field-err" id="err-city">Required</span>
+        </div>
+        <div class="field">
+          <label>State <span class="req">*</span></label>
+          <input id="co-state" type="text" placeholder="NY" maxlength="2" oninput="validateCheckout()">
+          <span class="field-err" id="err-state">Required</span>
+        </div>
+        <div class="field">
+          <label>ZIP Code <span class="req">*</span></label>
+          <input id="co-zip" type="text" placeholder="10001" maxlength="10" oninput="validateCheckout()">
+          <span class="field-err" id="err-zip">Required</span>
+        </div>
+        <div class="field full">
+          <label>Country <span class="req">*</span></label>
+          <input id="co-country" type="text" placeholder="United States" oninput="validateCheckout()">
+          <span class="field-err" id="err-country">Required</span>
+        </div>
+      </div>
+      <div id="co-error" class="form-error hidden" style="margin-top:8px"></div>
+      <button id="place-order-btn" class="btn-primary btn-block" disabled onclick="placeOrder()">
+        Complete Order →
+      </button>
+      <p class="checkout-note">🔒 Secure checkout — all fields are required</p>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ PRODUCT DETAIL PANEL ═══ -->
+<div id="detail-overlay" class="overlay" onclick="closeDetail()"></div>
+<aside id="detail-panel" class="detail-panel">
+  <button class="drawer-close" onclick="closeDetail()" style="position:absolute;top:16px;right:16px">×</button>
+  <div id="detail-body"></div>
+</aside>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="page-main">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Product Catalog</h1>
+      <p class="page-sub">Browse our full collection of premium tech products</p>
+    </div>
+    <div class="page-actions">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input id="search-input" type="text" placeholder="Search products…" oninput="filterProducts()">
+      </div>
+    </div>
+  </div>
+
+  <div id="product-grid" class="product-grid">
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">⚡ APEX COMMERCE</div>
+    <div class="footer-links">
+      <a href="/products">Products</a>
+      <a href="/orders">My Orders</a>
+      <a href="/tracking">Order Tracking</a>
+    </div>
+    <p class="footer-copy">Designed & Built with FastAPI · SQLAlchemy · Redis</p>
+  </div>
+</footer>
+
+<div id="shared-modals"></div>
+
+<script src="/static/shared.js"></script>
+<script>
+// ─── Init ───
+const ICONS = ['📱','⌚','🔋','💻','🎧','📷','🖥️','⌨️','🖱️','📡'];
+let allProducts = [];
+let cartOpen = false;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  injectSharedUI('products');
+  await loadProducts();
+  if (isLoggedIn()) await loadCart();
+});
+
+// ─── Products ───
+async function loadProducts() {
+  const grid = document.getElementById('product-grid');
+  const data = await api('GET', '/products/?limit=100');
+  if (data._err || !Array.isArray(data)) {
+    grid.innerHTML = `<div class="empty-catalog"><div class="empty-catalog-icon">⚠️</div><p>${data._err || 'Could not load products'}</p></div>`;
+    return;
+  }
+  allProducts = data;
+  renderProducts(allProducts);
+}
+
+function renderProducts(prods) {
+  const grid = document.getElementById('product-grid');
+  if (!prods.length) {
+    grid.innerHTML = `<div class="empty-catalog"><div class="empty-catalog-icon">🔍</div><h3>No results</h3><p>Try a different search term.</p></div>`;
+    return;
+  }
+  grid.innerHTML = prods.map((p, i) => {
+    const stock = p.variants?.reduce((s, v) => s + (v.quantity_in_stock || 0), 0) || 0;
+    const minPrice = p.variants?.length
+      ? Math.min(...p.variants.map(v => v.price))
+      : p.price;
+    return `
+    <div class="product-card" style="animation-delay:${i*50}ms" onclick="openDetail(${p.id})">
+      <div class="card-img">
+        <span class="card-icon">${ICONS[i % ICONS.length]}</span>
+        <div class="card-badge ${stock > 0 ? 'badge-green' : 'badge-red'}">
+          ${stock > 0 ? `${stock} in stock` : 'Sold out'}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-sku">${p.sku}</div>
+        <h3 class="card-name">${p.name}</h3>
+        <div class="card-meta">
+          ${p.variants?.length > 1 ? `<span class="variant-pill">${p.variants.length} variants</span>` : ''}
+        </div>
+        <div class="card-footer">
+          <div>
+            <div class="card-from">from</div>
+            <div class="card-price">$${minPrice.toFixed(2)}</div>
+          </div>
+          <button class="view-btn" onclick="event.stopPropagation();openDetail(${p.id})">View →</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterProducts() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  renderProducts(q ? allProducts.filter(p =>
+    p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
+  ) : allProducts);
+}
+
+// ─── Product Detail Panel ───
+function openDetail(productId) {
+  const p = allProducts.find(x => x.id === productId);
+  if (!p) return;
+  const stock = p.variants?.reduce((s, v) => s + (v.quantity_in_stock || 0), 0) || 0;
+  const icon = ICONS[allProducts.indexOf(p) % ICONS.length];
+  const variants = p.variants || [];
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-img">
+      <span class="detail-icon">${icon}</span>
+    </div>
+    <div class="detail-content">
+      <div class="detail-sku">${p.sku}</div>
+      <h2 class="detail-name">${p.name}</h2>
+      <div class="detail-stock ${stock > 0 ? 'text-green' : 'text-red'}">
+        ${stock > 0 ? `✓ ${stock} units available` : '✗ Out of stock'}
+      </div>
+
+      ${variants.length > 0 ? `
+      <div class="detail-section">
+        <label class="detail-label">Choose Variant</label>
+        <div class="variant-grid" id="variant-grid">
+          ${variants.map((v, i) => `
+            <button class="variant-btn ${v.quantity_in_stock === 0 ? 'variant-oos' : ''} ${i===0?'selected':''}"
+              onclick="selectVariant(${v.id}, ${v.price}, ${v.quantity_in_stock}, this)"
+              data-vid="${v.id}" data-price="${v.price}" data-stock="${v.quantity_in_stock}"
+              ${v.quantity_in_stock === 0 ? 'disabled' : ''}>
+              <span class="v-name">${v.name}</span>
+              <span class="v-price">$${v.price.toFixed(2)}</span>
+              ${v.quantity_in_stock === 0 ? '<span class="v-oos">Out of stock</span>' : ''}
+            </button>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="detail-section">
+        <label class="detail-label">Quantity</label>
+        <div class="qty-wrap">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span id="qty-display" class="qty-val">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+
+      <div class="detail-price-row">
+        <div>
+          <div class="detail-from">Total</div>
+          <div class="detail-price" id="detail-total-price">
+            $${(variants[0]?.price || p.price).toFixed(2)}
+          </div>
+        </div>
+        <button id="detail-add-btn" class="btn-primary"
+          onclick="addToCart()" ${stock === 0 ? 'disabled' : ''}>
+          ${stock === 0 ? 'Out of Stock' : '+ Add to Cart'}
+        </button>
+      </div>
+    </div>`;
+
+  // Set initial selected variant
+  if (variants.length > 0) {
+    const first = variants.find(v => v.quantity_in_stock > 0) || variants[0];
+    window._selectedVariantId    = first.id;
+    window._selectedVariantPrice = first.price;
+    window._selectedVariantStock = first.quantity_in_stock;
+  }
+  window._qty = 1;
+
+  document.getElementById('detail-overlay').classList.add('active');
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('active');
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+function selectVariant(id, price, stock, el) {
+  document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  window._selectedVariantId    = id;
+  window._selectedVariantPrice = price;
+  window._selectedVariantStock = stock;
+  window._qty = 1;
+  document.getElementById('qty-display').textContent = 1;
+  updateDetailPrice();
+}
+
+function changeQty(delta) {
+  const max = window._selectedVariantStock || 99;
+  window._qty = Math.max(1, Math.min(max, (window._qty || 1) + delta));
+  document.getElementById('qty-display').textContent = window._qty;
+  updateDetailPrice();
+}
+
+function updateDetailPrice() {
+  const total = (window._selectedVariantPrice || 0) * (window._qty || 1);
+  const el = document.getElementById('detail-total-price');
+  if (el) el.textContent = `$${total.toFixed(2)}`;
+}
+
+async function addToCart() {
+  if (!isLoggedIn()) { openAuthModal(() => addToCart()); return; }
+  const btn = document.getElementById('detail-add-btn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+  const r = await api('POST', '/cart/add', {
+    product_variant_id: window._selectedVariantId,
+    quantity: window._qty || 1
+  });
+  btn.disabled = false;
+  btn.textContent = r._err ? '+ Add to Cart' : '✓ Added!';
+  if (r._err) { showToast('⚠️ ' + r._err, true); return; }
+  showToast('✓ Added to cart!');
+  setTimeout(() => { btn.textContent = '+ Add to Cart'; }, 1500);
+  await loadCart();
+  await refreshCartBadge();
+}
+
+// ─── Cart ───
+function toggleCart() {
+  cartOpen = !cartOpen;
+  document.getElementById('_cart-overlay').classList.toggle('active', cartOpen);
+  document.getElementById('_cart-drawer').classList.toggle('open', cartOpen);
+  if (cartOpen && isLoggedIn()) loadCart();
+}
+
+async function loadCart() {
+  const body = document.getElementById('_cart-items');
+  const foot = document.getElementById('_cart-foot');
+  if (!isLoggedIn()) {
+    body.innerHTML = `<div class="empty-bag"><div class="empty-icon">🔒</div><p>Sign in to view your cart</p><button class="btn-primary" onclick="openAuthModal()">Sign In</button></div>`;
+    return;
+  }
+  const cart = await api('GET', '/cart/');
+  if (cart._err) return;
+  const items = cart.items || [];
+  const total = items.reduce((s, i) => s + i.price_at_add * i.quantity, 0);
+  refreshCartBadge();
+
+  if (items.length === 0) {
+    body.innerHTML = `<div class="empty-bag"><div class="empty-icon">🛍️</div><p>Your cart is empty</p></div>`;
+    foot.classList.add('hidden');
+    return;
+  }
+  foot.classList.remove('hidden');
+  document.getElementById('_cart-total').textContent = `$${total.toFixed(2)}`;
+
+  body.innerHTML = items.map(item => `
+    <div class="cart-item">
+      <div class="ci-info">
+        <div class="ci-name">${item.variant?.name || 'Item'}</div>
+        <div class="ci-price">$${item.price_at_add.toFixed(2)} × ${item.quantity}</div>
+      </div>
+      <div class="ci-right">
+        <span class="ci-total">$${(item.price_at_add * item.quantity).toFixed(2)}</span>
+        <button class="ci-remove" onclick="removeCartItem(${item.id})">×</button>
+      </div>
+    </div>`).join('');
+
+  validateCheckout();
+}
+
+async function removeCartItem(id) {
+  await api('DELETE', `/cart/items/${id}`);
+  await loadCart();
+}
+
+// ─── Checkout Validation ───
+const CHECKOUT_FIELDS = [
+  { id: 'co-street', err: 'err-street', label: 'Street address' },
+  { id: 'co-city',   err: 'err-city',   label: 'City' },
+  { id: 'co-state',  err: 'err-state',  label: 'State' },
+  { id: 'co-zip',    err: 'err-zip',    label: 'ZIP code' },
+  { id: 'co-country',err: 'err-country',label: 'Country' },
+];
+
+function validateCheckout() {
+  let valid = true;
+  for (const f of CHECKOUT_FIELDS) {
+    const el  = document.getElementById(f.id);
+    const err = document.getElementById(f.err);
+    if (!el) continue;
+    const empty = !el.value.trim();
+    el.classList.toggle('input-error', empty);
+    if (err) err.classList.toggle('visible', empty);
+    if (empty) valid = false;
+  }
+  const btn = document.getElementById('place-order-btn');
+  if (btn) {
+    btn.disabled = !valid;
+    btn.classList.toggle('btn-ready', valid);
+  }
+  return valid;
+}
+
+async function placeOrder() {
+  if (!validateCheckout()) return;
+  if (!isLoggedIn()) { openAuthModal(() => placeOrder()); return; }
+
+  const btn = document.getElementById('place-order-btn');
+  btn.disabled = true; btn.textContent = 'Placing order…';
+
+  const addr = {
+    street:  document.getElementById('co-street').value.trim(),
+    city:    document.getElementById('co-city').value.trim(),
+    state:   document.getElementById('co-state').value.trim(),
+    zip:     document.getElementById('co-zip').value.trim(),
+    country: document.getElementById('co-country').value.trim(),
+  };
+
+  const r = await api('POST', '/orders/', {
+    shipping_address: addr,
+    billing_address:  addr,
+  });
+
+  if (r._err) {
+    document.getElementById('co-error').textContent = r._err;
+    document.getElementById('co-error').classList.remove('hidden');
+    btn.disabled = false; btn.textContent = 'Complete Order →';
+    return;
+  }
+
+  showToast(`✓ Order #${r.id} placed! Redirecting to live tracking…`);
+  // Clear form
+  CHECKOUT_FIELDS.forEach(f => { const el = document.getElementById(f.id); if(el) el.value = ''; });
+  validateCheckout();
+  await loadCart();
+  await loadProducts();
+  setTimeout(() => { window.location.href = `/tracking?id=${r.id}`; }, 1600);
+}
+</script>
+</body>
+</html>

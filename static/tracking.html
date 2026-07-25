@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Tracking — Apex Commerce</title>
+  <meta name="description" content="Track your package shipment in real-time.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="/static/pages.css">
+  <style>
+    .track-search-card {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 32px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      margin-bottom: 32px;
+    }
+    .track-input-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .track-input-row input {
+      flex: 1;
+      font-size: 1rem;
+      padding: 12px 18px;
+    }
+    .tracking-result-panel {
+      background: var(--bg-1);
+      border: 1px solid var(--border-h);
+      border-radius: var(--r-xl);
+      padding: 32px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      animation: fadeUp .3s var(--ease);
+    }
+    .live-status-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .track-ord-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--text-1);
+    }
+    .est-delivery {
+      background: rgba(124,107,255,0.1);
+      border: 1px solid rgba(124,107,255,0.25);
+      padding: 10px 18px;
+      border-radius: var(--r-md);
+      color: var(--accent-2);
+      font-size: .88rem;
+      font-weight: 600;
+    }
+    .carrier-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      margin-top: 24px;
+    }
+    .cd-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cd-label {
+      font-size: .75rem;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 600;
+    }
+    .cd-val {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-1);
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar scrolled" id="navbar">
+  <div id="shared-nav"></div>
+</header>
+
+<main class="page-main">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Order Tracking</h1>
+      <p class="page-sub">Enter your Order ID to see real-time shipping updates & location</p>
+    </div>
+  </div>
+
+  <div class="track-search-card">
+    <label style="font-weight: 600; color: var(--text-2); font-size: .9rem;">Order ID or Number</label>
+    <div class="track-input-row">
+      <input id="track-id-input" type="text" placeholder="e.g. 1 or ORD-1002" onkeydown="if(event.key==='Enter') searchTrackOrder()">
+      <button class="btn-primary" onclick="searchTrackOrder()">Track Package →</button>
+    </div>
+  </div>
+
+  <div id="tracking-display">
+    <div class="empty-orders">
+      <div class="empty-orders-icon">🚚</div>
+      <h2>Package Tracking</h2>
+      <p>Enter your Order ID above to retrieve live tracking telemetry.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">⚡ APEX COMMERCE</div>
+    <div class="footer-links">
+      <a href="/products">Products</a>
+      <a href="/orders">My Orders</a>
+      <a href="/tracking">Order Tracking</a>
+    </div>
+    <p class="footer-copy">Designed & Built with FastAPI · SQLAlchemy · Redis</p>
+  </div>
+</footer>
+
+<div id="shared-modals"></div>
+
+<script src="/static/shared.js"></script>
+<script>
+const STATUS_STEPS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
+const STATUS_LABELS = {
+  pending:    'Order Placed',
+  confirmed:  'Order Confirmed',
+  processing: 'Fulfillment Center Processing',
+  shipped:    'Out for Delivery',
+  delivered:  'Delivered to Recipient',
+  cancelled:  'Cancelled',
+};
+const STATUS_ICONS = {
+  pending:    '🕐',
+  confirmed:  '✅',
+  processing: '⚙️',
+  shipped:    '🚚',
+  delivered:  '📦',
+  cancelled:  '❌',
+};
+const STATUS_COLORS = {
+  pending:    'status-amber',
+  confirmed:  'status-blue',
+  processing: 'status-purple',
+  shipped:    'status-blue',
+  delivered:  'status-green',
+  cancelled:  'status-red',
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  injectSharedUI('tracking');
+  const urlParams = new URLSearchParams(window.location.search);
+  const idParam = urlParams.get('id');
+  if (idParam) {
+    document.getElementById('track-id-input').value = idParam;
+    searchTrackOrder();
+  }
+});
+
+async function searchTrackOrder() {
+  const rawVal = document.getElementById('track-id-input').value.trim();
+  const display = document.getElementById('tracking-display');
+  if (!rawVal) {
+    showToast('Please enter an Order ID', true);
+    return;
+  }
+
+  display.innerHTML = `<div class="orders-loading"><div class="skeleton-card" style="height:250px"></div></div>`;
+
+  // Parse ID
+  let orderId = rawVal.replace(/\D/g, '');
+  if (!orderId) orderId = rawVal;
+
+  const res = await api('GET', `/orders/${orderId}`);
+  if (res._err) {
+    display.innerHTML = `
+      <div class="empty-orders">
+        <div class="empty-orders-icon">⚠️</div>
+        <h2>Order Not Found</h2>
+        <p>Could not locate tracking information for "${rawVal}". Make sure you are signed in to view your orders.</p>
+        <button class="btn-primary" onclick="openAuthModal(searchTrackOrder)">Sign In</button>
+      </div>`;
+    return;
+  }
+
+  renderTrackingResult(res);
+}
+
+function renderTrackingResult(order) {
+  const display = document.getElementById('tracking-display');
+  const status = order.status || 'pending';
+  const statusClass = STATUS_COLORS[status] || 'status-amber';
+  const stepIndex = STATUS_STEPS.indexOf(status);
+  const isCancelled = status === 'cancelled';
+  const items = order.items || [];
+
+  display.innerHTML = `
+    <div class="tracking-result-panel">
+      <div class="live-status-hero">
+        <div>
+          <div class="track-ord-num">Order #${order.id}</div>
+          <div style="font-size:.85rem; color:var(--text-3); margin-top:4px;">
+            Placed on ${new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        </div>
+        <div>
+          <span class="status-badge ${statusClass}" style="font-size:1rem; padding:8px 18px;">
+            ${STATUS_ICONS[status]} ${STATUS_LABELS[status] || status}
+          </span>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      ${!isCancelled ? `
+      <div class="timeline" style="padding: 10px 0 30px;">
+        ${STATUS_STEPS.map((s, i) => `
+          <div class="timeline-step ${i <= stepIndex ? 'done' : ''} ${i === stepIndex ? 'current' : ''}">
+            <div class="tl-dot">
+              ${i < stepIndex ? '✓' : i === stepIndex ? '●' : ''}
+            </div>
+            <div class="tl-label">${STATUS_LABELS[s]}</div>
+          </div>
+          ${i < STATUS_STEPS.length - 1 ? `<div class="tl-line ${i < stepIndex ? 'done' : ''}"></div>` : ''}
+        `).join('')}
+      </div>` : `
+      <div class="cancelled-banner">❌ Order Cancelled — No tracking active</div>`}
+
+      <div class="carrier-details">
+        <div class="cd-item">
+          <span class="cd-label">Carrier & Tracking</span>
+          <span class="cd-val">Apex Express #${order.id * 982341}</span>
+        </div>
+        <div class="cd-item">
+          <span class="cd-label">Est. Delivery</span>
+          <span class="cd-val text-green">${status === 'delivered' ? 'Delivered' : '2-3 Business Days'}</span>
+        </div>
+        <div class="cd-item">
+          <span class="cd-label">Total Paid</span>
+          <span class="cd-val">$${(order.total_amount || 0).toFixed(2)}</span>
+        </div>
+      </div>
+
+      <!-- Shipping Address -->
+      ${order.shipping_address ? `
+      <div class="order-shipping-section" style="margin-top: 24px;">
+        <h4 class="order-section-title">Destination Address</h4>
+        <div class="shipping-card">
+          <div class="shipping-icon">📍</div>
+          <div>
+            <div style="font-weight:700; color:var(--text-1);">${order.shipping_address.street || ''}</div>
+            <div>${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} ${order.shipping_address.zip || ''}</div>
+            <div>${order.shipping_address.country || ''}</div>
+          </div>
+        </div>
+      </div>` : ''}
+
+      <!-- Items List -->
+      <div class="order-items-section" style="margin-top:24px;">
+        <h4 class="order-section-title">Package Contents (${items.length} items)</h4>
+        <div class="order-items-list">
+          ${items.map(item => `
+            <div class="order-item">
+              <div class="oi-icon">📦</div>
+              <div class="oi-info">
+                <div class="oi-name">${item.product_name || 'Product'}</div>
+                <div class="oi-variant">${item.variant_name || ''}</div>
+              </div>
+              <div class="oi-right">
+                <div class="oi-qty">Qty: ${item.quantity}</div>
+                <div class="oi-price">$${((item.unit_price || 0) * item.quantity).toFixed(2)}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>
