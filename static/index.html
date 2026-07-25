@@ -267,18 +267,18 @@ async function loadProducts() {
         }
         document.getElementById('stat-products').textContent = prods.length;
         document.getElementById('catalog-meta').textContent = `${prods.length} items`;
-        const IMGS = ['/static/phone_pro.jpg', '/static/smartwatch.jpg', '/static/headphones.jpg'];
+        const icons = ['📱','⌚','🔋','💻','🎧','📷','🖥️','⌨️'];
         grid.innerHTML = prods.map((p, i) => {
             const stock = (p.variants && p.variants.length)
                 ? p.variants.reduce((sum, v) => sum + (v.quantity_in_stock || 0), 0)
                 : (p.quantity_in_stock || 0);
             const v = p.variants && p.variants.length ? p.variants[0] : null;
             const vid = v ? v.id : null;
-            const imgSrc = IMGS[i % IMGS.length];
+            const icon = icons[i % icons.length];
             return `
             <div class="product-card" style="animation-delay:${i*60}ms">
-                <div class="card-img" style="background:#0b0d14">
-                    <img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:12px 12px 0 0;opacity:0.9;transition:transform 0.4s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="card-img">
+                    <span class="card-icon">${icon}</span>
                     <div class="card-badge ${stock > 0 ? 'badge-green' : 'badge-red'}">
                         ${stock > 0 ? `${stock} in stock` : 'Sold out'}
                     </div>
