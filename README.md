@@ -2,8 +2,6 @@
 
 An asynchronous, scalable e-commerce REST API and interactive storefront built with **Python 3.11+**, **FastAPI**, **SQLAlchemy 2.0**, **SQLite / PostgreSQL**, **Redis**, and **Celery**.
 
-![Apex Commerce Storefront Screenshot](./static/storefront_screenshot.png)
-
 ---
 
 ## 🌟 Key Features
