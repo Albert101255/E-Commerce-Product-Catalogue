@@ -72,15 +72,15 @@ export SQLALCHEMY_DATABASE_URI="sqlite+aiosqlite:///dev.db"
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 3. Open in Browser
-Once the server is running locally, access the web application routes:
+### 3. Open Web Application
+Once the server is running, access the web application routes:
 
-| Route Name | Target URL | Description |
+| Route Name | Web Route Path | Description |
 | :--- | :--- | :--- |
-| **Storefront Home** | [`http://localhost:8000/`](http://localhost:8000/) | Main landing page & featured catalog |
-| **Products Catalog** | [`http://localhost:8000/products`](http://localhost:8000/products) | Dedicated product list with filters & variants |
-| **My Orders** | [`http://localhost:8000/orders`](http://localhost:8000/orders) | User purchase history & order details |
-| **Order Tracking** | [`http://localhost:8000/tracking`](http://localhost:8000/tracking) | Real-time package tracking telemetry |
+| **Storefront Home** | [`/`](http://localhost:8000/) | Main landing page & featured catalog |
+| **Products Catalog** | [`/products`](http://localhost:8000/products) | Dedicated product list with filters & variants |
+| **My Orders** | [`/orders`](http://localhost:8000/orders) | User purchase history & order details |
+| **Order Tracking** | [`/tracking`](http://localhost:8000/tracking) | Real-time package tracking telemetry |
 
 ---
 
