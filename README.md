@@ -77,10 +77,10 @@ Access the storefront web routes in production or local environments:
 
 | Route Name | Live Domain Link | Description |
 | :--- | :--- | :--- |
-| **Storefront Home** | [`https://apexcommerce.store/`](https://apexcommerce.store/) | Main landing page & featured catalog |
-| **Products Catalog** | [`https://apexcommerce.store/products`](https://apexcommerce.store/products) | Dedicated product list with filters & variants |
-| **My Orders** | [`https://apexcommerce.store/orders`](https://apexcommerce.store/orders) | User purchase history & order details |
-| **Order Tracking** | [`https://apexcommerce.store/tracking`](https://apexcommerce.store/tracking) | Real-time package tracking telemetry |
+| **Storefront Home** | [`https://e-commerce-product-catalogue.onrender.com/`](https://e-commerce-product-catalogue.onrender.com/) | Main landing page & featured catalog |
+| **Products Catalog** | [`https://e-commerce-product-catalogue.onrender.com/products`](https://e-commerce-product-catalogue.onrender.com/products) | Dedicated product list with filters & variants |
+| **My Orders** | [`https://e-commerce-product-catalogue.onrender.com/orders`](https://e-commerce-product-catalogue.onrender.com/orders) | User purchase history & order details |
+| **Order Tracking** | [`https://e-commerce-product-catalogue.onrender.com/tracking`](https://e-commerce-product-catalogue.onrender.com/tracking) | Real-time package tracking telemetry |
 
 ---
 
