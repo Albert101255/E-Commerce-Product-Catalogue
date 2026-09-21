@@ -1,127 +1,109 @@
-# ⚡ Apex Commerce — Enterprise E-Commerce Product Catalogue & Platform
+# Apex Commerce — E-Commerce Product Catalogue
 
-An asynchronous, scalable e-commerce REST API and interactive storefront built with **Python 3.11+**, **FastAPI**, **SQLAlchemy 2.0**, **SQLite / PostgreSQL**, **Redis**, and **Celery**.
+A FastAPI-based e-commerce backend and storefront with asynchronous SQLAlchemy, JWT authentication, product variants, carts, orders, tracking, Redis/Celery support, and Docker-based deployment.
 
----
+## What this project demonstrates
 
-## 🌟 Key Features
+- Python 3.11+ and FastAPI API design
+- Async SQLAlchemy 2.0 database access
+- JWT authentication and role-based authorization
+- Product/catalog, cart, order, and tracking workflows
+- Background task integration with Celery
+- Redis-backed infrastructure
+- Pytest-based automated testing
+- Local and containerized development
 
-* **⚡ Modern Fast Storefront UI:** Clean, responsive dark-mode e-commerce web application with real-time stock counters, variant selectors, and quantity calculators.
-* **🛍️ Product & Catalog Management:** Flexible product schemas with dynamic variants (color, size, RAM), categories, brands, and real-time inventory tracking.
-* **🚚 Real-Time Order Tracking:** Dedicated package tracking page (`/tracking`) with a 5-stage shipment visual progress timeline and carrier status telemetry.
-* **🔒 Address Validation Enforcement:** Required shipping address fields validation prior to order placement.
-* **🔑 Authentication & RBAC:** JWT authentication with Customer and Administrator role-based access control.
-* **⚡ Async Architecture:** Powered by SQLAlchemy 2.0 Async Session, Uvicorn, and high-concurrency event loops.
-* **⚙️ Background Workers:** Celery integration for async email dispatch, search indexing, and automated cart expiration.
+## Features
 
----
+- Product catalogue with categories, brands, variants, stock and search
+- Customer registration/login
+- Shopping cart and order creation
+- Order history and shipment-status tracking
+- Admin/customer role separation
+- Address validation before checkout
+- Background worker integration for asynchronous jobs
 
-## 📂 Architecture & Directory Structure
+## Architecture
 
 ```text
-.
-├── app/
-│   ├── api/
-│   │   ├── dependencies.py       # Auth & DB Injection dependencies
-│   │   └── v1/
-│   │       ├── api.py            # API Router aggregator
-│   │       └── endpoints/        # Endpoint routes (auth, products, cart, orders, etc.)
-│   ├── core/                     # Security, config, cache, and rate limiting
-│   ├── crud/                     # SQLAlchemy Async database query functions
-│   ├── db/                       # Base Declarative schema & async engine session maker
-│   ├── models/                   # SQLAlchemy Models (User, Product, Cart, Order, Payment)
-│   ├── schemas/                  # Pydantic validation schemas
-│   └── tasks/                    # Celery background tasks
-├── static/                       # Frontend web app assets
-│   ├── index.html                # Home storefront page
-│   ├── products.html             # Dedicated product catalog page
-│   ├── orders.html               # Customer orders list page
-│   ├── tracking.html             # Real-time order tracking page
-│   ├── shared.js                 # Global navigation & API client
-│   ├── index.css                 # Core CSS design system
-│   └── pages.css                 # Component & layout styles
-├── tests/                        # Full Pytest test suite (100% passing)
-├── pyproject.toml                # Poetry dependencies and package configuration
-├── dev.db                        # Development SQLite database
-└── README.md                     # Documentation
+Client / Storefront
+        |
+        v
+FastAPI API
+        |
+  +-----+------+
+  |            |
+SQLAlchemy   Celery
+  |            |
+PostgreSQL   Redis
 ```
 
----
+The code is organized into API routes, dependencies, schemas, models, CRUD logic, services and background tasks under `app/`.
 
-## 🚀 Quick Start Guide
+## Local setup
 
-### Prerequisites
-* **Python 3.11+** installed
-* **Poetry** or **Virtualenv**
+### Requirements
 
-### 1. Clone & Setup
+- Python 3.11+
+- PostgreSQL or SQLite
+- Redis if running worker-backed features
+
+### Run locally
+
 ```bash
 git clone https://github.com/Albert101255/E-Commerce-Product-Catalogue.git
 cd E-Commerce-Product-Catalogue
 
-# Activate environment and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt   # or poetry install
-```
+pip install -r requirements.txt
 
-### 2. Initialize Database & Run Server
-```bash
-# Set SQLite database URI and start server
-export SQLALCHEMY_DATABASE_URI="sqlite+aiosqlite:///dev.db"
+cp .env.example .env
+# Replace all placeholder credentials/secrets before use.
+
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 3. Application Web Routes
-Access the storefront web routes in production or local environments:
-
-| Route Name | Live Domain Link | Description |
-| :--- | :--- | :--- |
-| **Storefront Home** | [`https://e-commerce-product-catalogue.onrender.com/`](https://e-commerce-product-catalogue.onrender.com/) | Main landing page & featured catalog |
-| **Products Catalog** | [`https://e-commerce-product-catalogue.onrender.com/products`](https://e-commerce-product-catalogue.onrender.com/products) | Dedicated product list with filters & variants |
-| **My Orders** | [`https://e-commerce-product-catalogue.onrender.com/orders`](https://e-commerce-product-catalogue.onrender.com/orders) | User purchase history & order details |
-| **Order Tracking** | [`https://e-commerce-product-catalogue.onrender.com/tracking`](https://e-commerce-product-catalogue.onrender.com/tracking) | Real-time package tracking telemetry |
-
----
-
-## 🔑 Default Credentials
-
-### Administrator Account
-* **Email:** `admin@store.com`
-* **Password:** `AdminPass123!`
-
----
-
-## 🧪 Running Tests
-
-Execute the complete asynchronous test suite using `pytest`:
+## Testing
 
 ```bash
 pytest
 ```
 
-Output:
-```text
-===================== 29 passed in 21.74s =====================
-```
+The repository contains an automated Pytest suite. Test counts and coverage can change as the project evolves, so the current test run should be treated as the source of truth rather than a hard-coded metric in this README.
 
----
+## Live demo
 
-## 🛠️ API Specifications
+A deployment has been configured at:
 
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/register` | Register new user account | No |
-| `POST` | `/api/v1/auth/login` | Authenticate and obtain JWT token | No |
-| `GET` | `/api/v1/products/` | List products with pagination & search | No |
-| `GET` | `/api/v1/products/{id}` | Get detailed product by ID | No |
-| `POST` | `/api/v1/cart/add` | Add product variant to cart | Yes |
-| `GET` | `/api/v1/cart/` | Retrieve active shopping cart | Yes |
-| `POST` | `/api/v1/orders/` | Place a new order | Yes |
-| `GET` | `/api/v1/orders/` | List customer orders | Yes |
-| `GET` | `/api/v1/orders/{id}` | Retrieve order status & tracking details | Yes |
+- https://e-commerce-product-catalogue.onrender.com/
 
----
+Do not reuse local seed/admin credentials on an internet-facing deployment. Public demos should use restricted demo accounts and rotated secrets.
 
-## 📝 License
-This project is licensed under the MIT License.
+## Security notes
+
+- Real `.env` files are ignored and should never be committed.
+- `.env.example` contains placeholders only.
+- Local database files are ignored.
+- Production deployments should use strong generated secrets, managed credentials, HTTPS, migrations and backups.
+
+## API examples
+
+Typical routes include:
+
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/products/`
+- `POST /api/v1/cart/add`
+- `GET /api/v1/cart/`
+- `POST /api/v1/orders/`
+- `GET /api/v1/orders/`
+- `GET /api/v1/orders/{id}`
+
+## Current focus
+
+This repository is a learning and portfolio project. The strongest next improvements are deployment hardening, a restricted public demo account, screenshots, CI visibility, and more explicit performance/coverage measurement.
+
+## License
+
+MIT
