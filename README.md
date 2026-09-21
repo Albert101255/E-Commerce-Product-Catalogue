@@ -104,6 +104,6 @@ Typical routes include:
 
 This repository is a learning and portfolio project. The strongest next improvements are deployment hardening, a restricted public demo account, screenshots, CI visibility, and more explicit performance/coverage measurement.
 
-## License
+## Licensing
 
-MIT
+No repository license file is currently included. Add one deliberately if you want to grant reuse rights.
