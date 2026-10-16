@@ -1,7 +1,6 @@
 from typing import Any
 
-from pydantic import field_validator
-from pydantic_core.core_schema import FieldValidationInfo
+from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,7 +38,7 @@ class Settings(BaseSettings):
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: Any, info: FieldValidationInfo) -> Any:
+    def assemble_db_connection(cls, v: Any, info: ValidationInfo) -> Any:
         if isinstance(v, str):
             return v
 
