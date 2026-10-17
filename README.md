@@ -1,3 +1,6 @@
+> **Live Interactive Storefront:** [https://albert101255.github.io/E-Commerce-Product-Catalogue/](https://albert101255.github.io/E-Commerce-Product-Catalogue/)  
+> **Render Live Backend & App:** [https://e-commerce-product-catalogue.onrender.com/](https://e-commerce-product-catalogue.onrender.com/)
+
 # Apex Commerce — E-Commerce Product Catalogue
 
 A FastAPI-based e-commerce backend and storefront with asynchronous SQLAlchemy, JWT authentication, product variants, carts, orders, tracking, Redis/Celery support, and Docker-based deployment.
